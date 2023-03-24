@@ -1,4 +1,4 @@
-use rand::prelude::*;
+use rand::random;
 use std::str::FromStr;
 use std::io::{stdout, stdin, Write};
 
@@ -30,7 +30,7 @@ impl FromStr for Dice {
 }
 
 impl Dice {
-    fn roll(&self) {
+    fn roll(&self) -> u8 {
         let sides = match self {
             Dice::D4 => 4,
             Dice::D6 => 6,
@@ -40,7 +40,7 @@ impl Dice {
             Dice::D20 => 20,
         };
 
-        (rand::random::<u8>()%sides)+1
+        return (random::<u8>()%sides)+1
     }
 }
 
@@ -56,7 +56,7 @@ fn main() {
 
         stdin().read_line(&mut input).unwrap();
 
-        let d = match Dice::from_str(&mut input.trim()) {
+        let d = match Dice::from_str(input.trim()) {
             Ok(val) => val,
             Err(_) => { 
                 println!("You did not enter a valid choice. Please enter d4, d6, d8, d10, d12, or d20!");
@@ -66,9 +66,7 @@ fn main() {
 
         println!("{d:?}");
 
-        
-
-        println!("You have chosen {d:?}, here is your roll: {}", d::roll());
+        println!("You have chosen {d:?}, here is your roll: {}", d.roll());
     
     }
 }
