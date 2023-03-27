@@ -9,6 +9,8 @@ use pancurses::{initscr, endwin, Window};
 
 fn pc_read_line(w: &Window) -> String {
 
+    w.refresh();
+
     let mut input = w.getch().unwrap();
 
     let mut c = match input {
@@ -22,7 +24,7 @@ fn pc_read_line(w: &Window) -> String {
 
     while c != '\n' {
 
-        println!("{c}");
+        // println!("{c}");
 
         str = format!("{}{}", str, c);
 
@@ -35,6 +37,7 @@ fn pc_read_line(w: &Window) -> String {
 
         };
     }
+    w.erase();
     return str
 }
 
@@ -71,15 +74,17 @@ impl FromStr for Monster {
 
         for attr in input.split(",") {
 
+            let attr = attr.replace("}","").replace("{","").replace("]","");
+
             let atttr: Vec<&str> = attr.split(":").collect();
 
             match atttr[0].trim() {
                 "ac" => mon.ac = atttr[1].trim().parse::<u8>().unwrap(),
-                "attack" => mon.attack = atttr[1].parse::<u8>().unwrap(),
-                "damage" => mon.damage.push(Dice::from_str(atttr[1]).unwrap()),
-                "hp" => mon.hp = atttr[1].parse::<i32>().unwrap(),
-                "name" => mon.name = atttr[1].to_owned(),
-                "perception" => mon.perception = atttr[1].parse::<u8>().unwrap(),
+                "attack" => mon.attack = atttr[1].trim().parse::<u8>().unwrap(),
+                "damage" => mon.damage.push(Dice::from_str(&atttr[1].trim().replace("[","").replace("]","")).unwrap()),
+                "hp" => mon.hp = atttr[1].trim().parse::<i32>().unwrap(),
+                "name" => mon.name = atttr[1].trim().replace("\"","").to_owned(),
+                "perception" => mon.perception = atttr[1].trim().parse::<u8>().unwrap(),
                 _ => ()
                 
             } 
@@ -117,13 +122,14 @@ impl FromStr for Dice {
     type Err = ();
 
     fn from_str(input: &str) -> Result<Dice, Self::Err> {
-        match input {
-            "d4" => Ok(Dice::D4),
-            "d6" => Ok(Dice::D6),
-            "d8" => Ok(Dice::D8),
-            "d10" => Ok(Dice::D10),
-            "d12" => Ok(Dice::D12),
-            "d20" => Ok(Dice::D20),
+
+        match input.to_uppercase().as_str() {
+            "D4" => Ok(Dice::D4),
+            "D6" => Ok(Dice::D6),
+            "D8" => Ok(Dice::D8),
+            "D10" => Ok(Dice::D10),
+            "D12" => Ok(Dice::D12),
+            "D20" => Ok(Dice::D20),
             _ => Err(())
         }
     }
@@ -162,6 +168,7 @@ fn roll_dice(w: &Window) {
         }
     };
 
+    w.erase();
     w.printw(format!("You have chosen {d:?}, here is your roll: {}", d.roll()));
     w.getch();
 }
@@ -198,12 +205,13 @@ fn add_monster(w: &Window, monsters: &mut Vec<Monster>, saved_monsters: &mut Vec
         let perception = pc_read_line(w);
 
         monsters.push(Monster::from_str(&format!("name:{name} ac:{ac} hp:{hp} damage:{damage} attack:{attack} perception:{perception}")).unwrap());
+        saved_monsters.push(Monster::from_str(&format!("name:{name} ac:{ac} hp:{hp} damage:{damage} attack:{attack} perception:{perception}")).unwrap());
 
     }
 
     let success = match input.parse::<u32>() {
 
-        Ok(v) => { monsters.push(saved_monsters[usize::try_from(v).unwrap()].clone()); true},
+        Ok(v) => { monsters.push(saved_monsters[usize::try_from(v-1).unwrap()].clone()); true},
         Err(_) => false
 
     };
@@ -211,7 +219,7 @@ fn add_monster(w: &Window, monsters: &mut Vec<Monster>, saved_monsters: &mut Vec
     if !success {
 
         for monster in saved_monsters.clone() {
-            if input == monster.name {
+            if input.to_uppercase() == monster.name.to_uppercase() {
                 monsters.push(monster);
             }
         }
@@ -225,7 +233,7 @@ fn load_saved_monsters() -> Result<Vec<Monster>, &'static str> {
 
     let mut mons_list: Vec<Monster> = Vec::new();
 
-    for mon in contents.split("}") {
+    for mon in contents.split("},") {
         mons_list.push(Monster::from_str(mon).unwrap())   
     } 
 
@@ -265,6 +273,7 @@ fn main() {
                     '2' => add_monster(&window, &mut monsters, &mut saved_monsters),
                     // "3" => add_player(),
                     // "4" => tick(),
+                    'q' => eprintln!("\nsaved_monsters = {saved_monsters:?}\nmonsters = {monsters:?}"),
                     _ => {window.printw(format!("{v} was not a valid input. Please try again!"));}
                 }
             },
