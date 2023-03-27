@@ -1,0 +1,1 @@
+[Monster { ac: 12, attack: 2, damage: [D6], hp: 50, name: "Goblin", perception: 1 }, Monster { ac: 15, attack: 5, damage: [D8], hp: 120, name: "Hobgoblin", perception: 4 }]
